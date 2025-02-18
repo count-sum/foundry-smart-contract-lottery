@@ -10,5 +10,9 @@ out/
 # Docs
 docs/
 
+# Lib
+lib/
+
+
 # Dotenv file
 .env
