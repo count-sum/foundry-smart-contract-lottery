@@ -2,7 +2,8 @@
 
 pragma solidity 0.8.19;
 
-import {VRFConsumerBaseV2Plus} from "lib/chainlink-brownie-contracts/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import {VRFConsumerBaseV2Plus} from
+    "lib/chainlink-brownie-contracts/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 // import {VRFConsumerBaseV2Plus} from "@chainlink/
 
 import {VRFV2PlusClient} from "lib/chainlink-brownie-contracts/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
@@ -20,11 +21,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     error Raffle__SendMoreToEnterRaffle();
     error Raffle__TransferFailed();
     error Raffle__RaffleNotOpen();
-    error Raffle__UpkeepNotNeeded(
-        uint256 balance,
-        uint256 playersLength,
-        uint256 raffleState
-    );
+    error Raffle__UpkeepNotNeeded(uint256 balance, uint256 playersLength, uint256 raffleState);
 
     /**
      * State Variables
@@ -48,6 +45,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     enum RaffleState {
         OPEN, // 0
         CALCULATING //1
+
     }
 
     /**
@@ -89,11 +87,12 @@ contract Raffle is VRFConsumerBaseV2Plus {
     // When should the winner be picked?
     // @dev this is the function that the Chainlink nodes will call to see
     // if it's time to pick the winner
-    function checkUpkeep(
-        bytes memory /*checkData*/
-    ) public view returns (bool upkeepNeeded, bytes memory /*performData*/) {
-        bool timeHasPassed = ((block.timestamp - s_lastTimeStamp) >=
-            i_interval);
+    function checkUpkeep(bytes memory /*checkData*/ )
+        public
+        view
+        returns (bool upkeepNeeded, bytes memory /*performData*/ )
+    {
+        bool timeHasPassed = ((block.timestamp - s_lastTimeStamp) >= i_interval);
         bool hasPlayers = s_players.length > 0;
         bool hasBalance = address(this).balance > 0;
         bool isOpen = s_raffleState == RaffleState.OPEN;
@@ -101,30 +100,23 @@ contract Raffle is VRFConsumerBaseV2Plus {
         return (upkeepNeeded, "");
     }
 
-    function performUpkeep(bytes calldata /*performData*/) external {
-        (bool upkeepNeeded, ) = checkUpkeep("");
+    function performUpkeep(bytes calldata /*performData*/ ) external {
+        (bool upkeepNeeded,) = checkUpkeep("");
         if (!upkeepNeeded) {
-            revert Raffle__UpkeepNotNeeded(
-                address(this).balance,
-                s_players.length,
-                uint256(s_raffleState)
-            );
+            revert Raffle__UpkeepNotNeeded(address(this).balance, s_players.length, uint256(s_raffleState));
         }
 
         s_raffleState = RaffleState.CALCULATING;
 
-        VRFV2PlusClient.RandomWordsRequest memory request = VRFV2PlusClient
-            .RandomWordsRequest({
-                keyHash: i_keyHash,
-                subId: i_subscriptionId,
-                requestConfirmations: REQUEST_CONFIRMATIONS,
-                callbackGasLimit: i_callbackGasLimit,
-                numWords: NUM_WORDS,
-                // Set nativePayment to true to pay for VRF requests with Sepolia ETH instead of LINK
-                extraArgs: VRFV2PlusClient._argsToBytes(
-                    VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
-                )
-            });
+        VRFV2PlusClient.RandomWordsRequest memory request = VRFV2PlusClient.RandomWordsRequest({
+            keyHash: i_keyHash,
+            subId: i_subscriptionId,
+            requestConfirmations: REQUEST_CONFIRMATIONS,
+            callbackGasLimit: i_callbackGasLimit,
+            numWords: NUM_WORDS,
+            // Set nativePayment to true to pay for VRF requests with Sepolia ETH instead of LINK
+            extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: false}))
+        });
 
         uint256 requestID = s_vrfCoordinator.requestRandomWords(request);
         emit RequestedRaffleWinner(requestID);
@@ -152,7 +144,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         s_lastTimeStamp = block.timestamp;
         emit WinnerPicked(recentWinner);
 
-        (bool success, ) = recentWinner.call{value: address(this).balance}("");
+        (bool success,) = recentWinner.call{value: address(this).balance}("");
         if (!success) {
             revert Raffle__TransferFailed();
         }
